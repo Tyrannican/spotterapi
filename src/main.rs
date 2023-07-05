@@ -21,25 +21,25 @@ pub struct Sighting {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Sightings {
-    sightings: Vec<Sighting>,
+pub struct SightingCollection {
+    latest: Vec<Sighting>,
 }
 
-impl Sightings {
+impl SightingCollection {
     pub fn new() -> Self {
-        Self { sightings: vec![] }
+        Self { latest: vec![] }
     }
 }
 
 #[derive(Clone)]
 struct AppState {
-    sightings: Arc<Mutex<Sightings>>,
+    sightings: Arc<Mutex<SightingCollection>>,
 }
 
 #[tokio::main]
 async fn main() {
     let state = AppState {
-        sightings: Arc::new(Mutex::new(Sightings::new())),
+        sightings: Arc::new(Mutex::new(SightingCollection::new())),
     };
 
     let router = Router::new()
@@ -56,13 +56,13 @@ async fn main() {
     server.await.unwrap();
 }
 
-async fn root_get() -> &'static str {
-    "Spotter API"
+async fn root_get() -> impl IntoResponse {
+    Json("Spotter API")
 }
 
 async fn get_sightings(State(state): State<AppState>) -> impl IntoResponse {
     let sightings = state.sightings.lock().unwrap();
-    let mut response = sightings.sightings.clone();
+    let mut response = sightings.latest.clone();
     response.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
 
     Json(response)
@@ -72,15 +72,15 @@ async fn post_sighting(
     State(state): State<AppState>,
     Json(mut payload): Json<Sighting>,
 ) -> impl IntoResponse {
-    let mut state = state.sightings.lock().unwrap();
+    let mut sightings = state.sightings.lock().unwrap();
 
     payload.id = Some(ulid::Ulid::new().to_string());
     payload.timestamp = Some(Utc::now().timestamp());
-    state.sightings.push(payload);
+    sightings.latest.push(payload);
 
     Json("Sighting added successfully")
 }
 
 async fn get_status() -> impl IntoResponse {
-    "OK"
+    Json("OK")
 }
