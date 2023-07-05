@@ -29,10 +29,6 @@ impl Sightings {
     pub fn new() -> Self {
         Self { sightings: vec![] }
     }
-
-    pub fn add(&mut self, sighting: Sighting) {
-        self.sightings.push(sighting);
-    }
 }
 
 #[derive(Clone)]
@@ -53,7 +49,7 @@ async fn main() {
         .route("/api/sightings", post(post_sighting))
         .with_state(state);
 
-    let server = Server::bind(&"0.0.0.0:9000".parse().unwrap()).serve(router.into_make_service());
+    let server = Server::bind(&"0.0.0.0:9123".parse().unwrap()).serve(router.into_make_service());
     let addr = server.local_addr();
     println!("Listening on {addr}");
 
@@ -66,7 +62,8 @@ async fn root_get() -> &'static str {
 
 async fn get_sightings(State(state): State<AppState>) -> impl IntoResponse {
     let sightings = state.sightings.lock().unwrap();
-    let response = sightings.clone();
+    let mut response = sightings.sightings.clone();
+    response.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
 
     Json(response)
 }
@@ -81,9 +78,9 @@ async fn post_sighting(
     payload.timestamp = Some(Utc::now().timestamp());
     state.sightings.push(payload);
 
-    Json("OK")
+    Json("Sighting added successfully")
 }
 
-async fn get_status() -> &'static str {
+async fn get_status() -> impl IntoResponse {
     "OK"
 }
