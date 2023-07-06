@@ -1,4 +1,4 @@
-server_port: 9123
+application_port: 9123
 database:
   host: "localhost"
   port: 5432
