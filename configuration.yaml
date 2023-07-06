@@ -1,0 +1,8 @@
+server_port: 9123
+database:
+  host: "localhost"
+  port: 5432
+  username: "postgres"
+  password: "password"
+  database_name: "spotter"
+

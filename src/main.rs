@@ -1,55 +1,50 @@
-use chrono::Utc;
-use std::sync::{Arc, Mutex};
+mod configuration;
+
+use configuration::get_configuration;
 
 use axum::{
     extract::State,
     response::IntoResponse,
     routing::{get, post},
-    Json, Router, Server,
+    Extension, Json, Router, Server,
 };
 use serde::{Deserialize, Serialize};
+use sqlx::postgres::{PgPool, PgPoolOptions};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sighting {
-    id: Option<String>,
     user_id: String,
     lat: f32,
     lng: f32,
     object: String,
     description: String,
-    timestamp: Option<i64>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SightingCollection {
-    latest: Vec<Sighting>,
-}
-
-impl SightingCollection {
-    pub fn new() -> Self {
-        Self { latest: vec![] }
-    }
 }
 
 #[derive(Clone)]
-struct AppState {
-    sightings: Arc<Mutex<SightingCollection>>,
-}
+struct AppState {}
 
 #[tokio::main]
 async fn main() {
-    let state = AppState {
-        sightings: Arc::new(Mutex::new(SightingCollection::new())),
-    };
+    let app_settings = get_configuration().expect("failed to load configuration");
+    let db_url = app_settings.database.connection_url();
+    let db_pool = PgPoolOptions::new()
+        .max_connections(100)
+        .connect(&db_url)
+        .await
+        .expect("unable to connect to postgres");
+
+    let state = AppState {};
 
     let router = Router::new()
         .route("/", get(root_get))
         .route("/status", get(get_status))
         .route("/api/sightings", get(get_sightings))
         .route("/api/sightings", post(post_sighting))
+        .layer(Extension(db_pool))
         .with_state(state);
 
-    let server = Server::bind(&"0.0.0.0:9123".parse().unwrap()).serve(router.into_make_service());
+    let server_addr = format!("0.0.0.0:{}", app_settings.application_port);
+    let server = Server::bind(&server_addr.parse().unwrap()).serve(router.into_make_service());
     let addr = server.local_addr();
     println!("Listening on {addr}");
 
@@ -61,22 +56,29 @@ async fn root_get() -> impl IntoResponse {
 }
 
 async fn get_sightings(State(state): State<AppState>) -> impl IntoResponse {
-    let sightings = state.sightings.lock().unwrap();
-    let mut response = sightings.latest.clone();
-    response.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-
+    let response = "I am a sighting";
     Json(response)
 }
 
 async fn post_sighting(
-    State(state): State<AppState>,
-    Json(mut payload): Json<Sighting>,
+    Extension(connection): Extension<PgPool>,
+    Json(payload): Json<Sighting>,
 ) -> impl IntoResponse {
-    let mut sightings = state.sightings.lock().unwrap();
+    let Sighting {
+        user_id,
+        lat,
+        lng,
+        object,
+        description,
+    } = payload;
 
-    payload.id = Some(ulid::Ulid::new().to_string());
-    payload.timestamp = Some(Utc::now().timestamp());
-    sightings.latest.push(payload);
+    let query = "SELECT * FROM sightings;";
+    let response = sqlx::query(&query)
+        .execute(&connection)
+        .await
+        .expect("error");
+
+    println!("{:?}", response);
 
     Json("Sighting added successfully")
 }
