@@ -11,3 +11,15 @@ chrono = "0.4.26"
 serde = { version = "1.0.166", features = ["derive"] }
 tokio = { version = "1.29.1", features = ["full"] }
 ulid = "1.0.0"
+
+[dependencies.sqlx]
+version = "~0.6"
+default-features = false
+features = [
+    "runtime-tokio-rustls",
+    "macros",
+    "postgres",
+    "uuid",
+    "chrono",
+    "migrate"
+]
