@@ -1,0 +1,75 @@
+{
+  "db": "PostgreSQL",
+  "8fd3388958fd9a2cdc1e7060fb955524a32ad9ef8a65acfb75ed42928f43a8e5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Float8",
+          "Float8",
+          "Text",
+          "Text",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        INSERT INTO \"sightings\"(id,user_id,lat,lng,object,description,created_at)\n        VALUES ($1,$2,$3,$4,$5,$6,$7)\n    "
+  },
+  "b550887a7c729a9035ad8d2448c25aae99eb8c09565a98151d1cfc1933be3e54": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "user_id",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "lat",
+          "ordinal": 2,
+          "type_info": "Float8"
+        },
+        {
+          "name": "lng",
+          "ordinal": 3,
+          "type_info": "Float8"
+        },
+        {
+          "name": "object",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "description",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 6,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT * FROM sightings"
+  }
+}

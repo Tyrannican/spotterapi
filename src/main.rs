@@ -8,16 +8,19 @@ use axum::{
     routing::{get, post},
     Extension, Json, Router, Server,
 };
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sighting {
+    id: Option<String>,
     user_id: String,
-    lat: f32,
-    lng: f32,
+    lat: f64,
+    lng: f64,
     object: String,
-    description: String,
+    description: Option<String>,
+    created_at: Option<i64>,
 }
 
 #[derive(Clone)]
@@ -55,30 +58,63 @@ async fn root_get() -> impl IntoResponse {
     Json("Spotter API")
 }
 
-async fn get_sightings(State(state): State<AppState>) -> impl IntoResponse {
-    let response = "I am a sighting";
-    Json(response)
+async fn get_sightings(Extension(connection): Extension<PgPool>) -> impl IntoResponse {
+    let response = sqlx::query!(r#"SELECT * FROM sightings"#)
+        .fetch_all(&connection)
+        .await
+        .expect("fuck");
+
+    let mut sightings: Vec<Sighting> = response
+        .into_iter()
+        .map(|r| Sighting {
+            id: Some(r.id),
+            user_id: r.user_id,
+            lat: r.lat,
+            lng: r.lng,
+            object: r.object,
+            description: r.description,
+            created_at: Some(r.created_at),
+        })
+        .collect();
+
+    sightings.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+
+    Json(sightings)
 }
 
 async fn post_sighting(
     Extension(connection): Extension<PgPool>,
-    Json(payload): Json<Sighting>,
+    Json(mut payload): Json<Sighting>,
 ) -> impl IntoResponse {
+    payload.id = Some(ulid::Ulid::new().to_string());
+    payload.created_at = Some(Utc::now().timestamp());
+
     let Sighting {
+        id,
         user_id,
         lat,
         lng,
         object,
         description,
+        created_at,
     } = payload;
 
-    let query = "SELECT * FROM sightings;";
-    let response = sqlx::query(&query)
-        .execute(&connection)
-        .await
-        .expect("error");
-
-    println!("{:?}", response);
+    sqlx::query!(
+        r#"
+        INSERT INTO "sightings"(id,user_id,lat,lng,object,description,created_at)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+    "#,
+        id,
+        user_id,
+        lat,
+        lng,
+        object,
+        description,
+        created_at
+    )
+    .execute(&connection)
+    .await
+    .expect("error");
 
     Json("Sighting added successfully")
 }

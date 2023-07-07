@@ -29,13 +29,12 @@ then
         -p "${DB_PORT}":5432 \
         -d postgres \
         postgres -N 1000
+
+    # Make sure that Postgres is available before creating it
+    echo >&2 "Giving postgres time to start up..."
+    sleep 10
 fi
 
-# Make sure that Postgres is available before creating it
-until psql -h "localhost" -U "${DB_USER}" -p "${DB_PORT}" -d "postgres" -c "\q"; do
-    >&2 echo "Postgres is still unavailable, sleeping..."
-    sleep 1
-done
 
 echo >&2 "Postgres is up and running on on port ${DB_PORT}!"
 
