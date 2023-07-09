@@ -1,5 +1,7 @@
+mod api_types;
 mod configuration;
 
+use api_types::Sighting;
 use configuration::get_configuration;
 
 use axum::{
@@ -8,20 +10,8 @@ use axum::{
     Extension, Json, Router, Server,
 };
 use chrono::Utc;
-use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use tower_http::cors::{Any, CorsLayer};
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Sighting {
-    id: Option<String>,
-    user_id: String,
-    lat: f64,
-    lng: f64,
-    object: String,
-    description: Option<String>,
-    created_at: Option<i64>,
-}
 
 #[derive(Clone)]
 struct AppState {}
@@ -63,7 +53,7 @@ async fn get_sightings(Extension(connection): Extension<PgPool>) -> impl IntoRes
     let response = sqlx::query!(r#"SELECT * FROM sightings"#)
         .fetch_all(&connection)
         .await
-        .expect("fuck");
+        .expect("unable to execute query");
 
     let mut sightings: Vec<Sighting> = response
         .into_iter()
