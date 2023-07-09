@@ -3,7 +3,6 @@ mod configuration;
 use configuration::get_configuration;
 
 use axum::{
-    extract::State,
     response::IntoResponse,
     routing::{get, post},
     Extension, Json, Router, Server,
@@ -11,6 +10,7 @@ use axum::{
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::{PgPool, PgPoolOptions};
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sighting {
@@ -44,6 +44,7 @@ async fn main() {
         .route("/api/sightings", get(get_sightings))
         .route("/api/sightings", post(post_sighting))
         .layer(Extension(db_pool))
+        .layer(CorsLayer::new().allow_origin(Any))
         .with_state(state);
 
     let server_addr = format!("0.0.0.0:{}", app_settings.application_port);
