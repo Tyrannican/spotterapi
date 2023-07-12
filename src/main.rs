@@ -5,6 +5,7 @@ use api_types::Sighting;
 use configuration::get_configuration;
 
 use axum::{
+    http::header::CONTENT_TYPE,
     response::IntoResponse,
     routing::{get, post},
     Extension, Json, Router, Server,
@@ -34,7 +35,11 @@ async fn main() {
         .route("/api/sightings", get(get_sightings))
         .route("/api/sightings", post(post_sighting))
         .layer(Extension(db_pool))
-        .layer(CorsLayer::new().allow_origin(Any))
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_headers(vec![CONTENT_TYPE]),
+        )
         .with_state(state);
 
     let server_addr = format!("0.0.0.0:{}", app_settings.application_port);
@@ -106,6 +111,8 @@ async fn post_sighting(
     .execute(&connection)
     .await
     .expect("error");
+
+    println!("Added things: {}", user_id);
 
     Json("Sighting added successfully")
 }
