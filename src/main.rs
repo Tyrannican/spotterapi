@@ -1,17 +1,17 @@
 mod api_types;
 mod configuration;
+mod routes;
 
-use api_types::Sighting;
 use configuration::get_configuration;
+use routes::get;
+use routes::post;
 
 use axum::{
     http::header::CONTENT_TYPE,
-    response::IntoResponse,
     routing::{get, post},
-    Extension, Json, Router, Server,
+    Extension, Router, Server,
 };
-use chrono::Utc;
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use sqlx::postgres::PgPoolOptions;
 use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Clone)]
@@ -30,10 +30,10 @@ async fn main() {
     let state = AppState {};
 
     let router = Router::new()
-        .route("/", get(root_get))
-        .route("/status", get(get_status))
-        .route("/api/sightings", get(get_sightings))
-        .route("/api/sightings", post(post_sighting))
+        .route("/", get(get::root))
+        .route("/status", get(get::status))
+        .route("/api/sightings", get(get::sightings))
+        .route("/api/sightings", post(post::sighting))
         .layer(Extension(db_pool))
         .layer(
             CorsLayer::new()
@@ -48,75 +48,4 @@ async fn main() {
     println!("Listening on {addr}");
 
     server.await.unwrap();
-}
-
-async fn root_get() -> impl IntoResponse {
-    Json("Spotter API")
-}
-
-async fn get_sightings(Extension(connection): Extension<PgPool>) -> impl IntoResponse {
-    let response = sqlx::query!(r#"SELECT * FROM sightings"#)
-        .fetch_all(&connection)
-        .await
-        .expect("unable to execute query");
-
-    let mut sightings: Vec<Sighting> = response
-        .into_iter()
-        .map(|r| Sighting {
-            id: Some(r.id),
-            user_id: r.user_id,
-            lat: r.lat,
-            lng: r.lng,
-            object: r.object,
-            description: r.description,
-            created_at: Some(r.created_at),
-        })
-        .collect();
-
-    sightings.sort_by(|a, b| b.created_at.cmp(&a.created_at));
-
-    Json(sightings)
-}
-
-async fn post_sighting(
-    Extension(connection): Extension<PgPool>,
-    Json(mut payload): Json<Sighting>,
-) -> impl IntoResponse {
-    payload.id = Some(ulid::Ulid::new().to_string());
-    payload.created_at = Some(Utc::now().timestamp());
-
-    let Sighting {
-        id,
-        user_id,
-        lat,
-        lng,
-        object,
-        description,
-        created_at,
-    } = payload;
-
-    sqlx::query!(
-        r#"
-        INSERT INTO "sightings"(id,user_id,lat,lng,object,description,created_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7)
-    "#,
-        id,
-        user_id,
-        lat,
-        lng,
-        object,
-        description,
-        created_at
-    )
-    .execute(&connection)
-    .await
-    .expect("error");
-
-    println!("Added things: {}", user_id);
-
-    Json("Sighting added successfully")
-}
-
-async fn get_status() -> impl IntoResponse {
-    Json("OK")
 }
