@@ -34,3 +34,12 @@ pub async fn sightings(Extension(connection): Extension<PgPool>) -> impl IntoRes
 
     Json(sightings)
 }
+
+pub async fn debug_clear_sightings(Extension(connection): Extension<PgPool>) -> impl IntoResponse {
+    let _ = sqlx::query("DELETE FROM sightings")
+        .execute(&connection)
+        .await
+        .expect("unable to execute debug deletion query");
+
+    Json("Successfully cleared `sightings` table")
+}

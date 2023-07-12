@@ -38,7 +38,7 @@ pub async fn sighting(
     .await
     .expect("error");
 
-    println!("Added things: {}", user_id);
+    println!("Added sighting: {}", user_id);
 
     Json("Sighting added successfully")
 }

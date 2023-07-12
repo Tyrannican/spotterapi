@@ -34,6 +34,7 @@ async fn main() {
         .route("/status", get(get::status))
         .route("/api/sightings", get(get::sightings))
         .route("/api/sightings", post(post::sighting))
+        .route("/api/sightings/clear", get(get::debug_clear_sightings))
         .layer(Extension(db_pool))
         .layer(
             CorsLayer::new()
