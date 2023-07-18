@@ -1,7 +1,7 @@
 use axum::{response::IntoResponse, Extension, Json};
 use sqlx::PgPool;
 
-use crate::api_types::Sighting;
+use crate::api_types::{Thing, ThingType};
 
 pub async fn root() -> impl IntoResponse {
     Json("Spotter API")
@@ -12,34 +12,31 @@ pub async fn status() -> impl IntoResponse {
 }
 
 pub async fn sightings(Extension(connection): Extension<PgPool>) -> impl IntoResponse {
-    let response = sqlx::query!(r#"SELECT * FROM sightings"#)
+    let response = sqlx::query!(r#"SELECT * FROM things"#)
         .fetch_all(&connection)
         .await
         .expect("unable to execute query");
 
-    let mut sightings: Vec<Sighting> = response
+    let sightings = response
         .into_iter()
-        .map(|r| Sighting {
-            id: Some(r.id),
-            user_id: r.user_id,
-            lat: r.lat,
-            lng: r.lng,
-            object: r.object,
-            description: r.description,
-            created_at: Some(r.created_at),
+        .map(|s| Thing {
+            name: s.name,
+            thing: ThingType::from_id(s.thing_type),
+            lat: s.lat,
+            lng: s.lng,
+            count: s.count,
+            description: s.description,
         })
-        .collect();
-
-    sightings.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        .collect::<Vec<Thing>>();
 
     Json(sightings)
 }
 
 pub async fn debug_clear_sightings(Extension(connection): Extension<PgPool>) -> impl IntoResponse {
-    let _ = sqlx::query("DELETE FROM sightings")
+    let _ = sqlx::query("DELETE FROM things")
         .execute(&connection)
         .await
         .expect("unable to execute debug deletion query");
 
-    Json("Successfully cleared `sightings` table")
+    Json("Successfully cleared `things` table")
 }
