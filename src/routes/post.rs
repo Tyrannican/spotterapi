@@ -11,6 +11,7 @@ pub async fn sighting(
     let thing_id = Some(uuid::Uuid::new_v4());
     let thing_ts = Some(Utc::now().naive_utc());
 
+    println!("Payload: {:?}", &payload);
     let Thing {
         thing,
         name,
