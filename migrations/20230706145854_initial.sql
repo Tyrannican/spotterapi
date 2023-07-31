@@ -13,6 +13,7 @@ CREATE TABLE things(
     lng FLOAT NOT NULL,
     count INTEGER NOT NULL,
     description TEXT,
+    image BYTEA,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(thing_type) REFERENCES thing_type(id)
 );
