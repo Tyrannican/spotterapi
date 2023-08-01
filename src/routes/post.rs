@@ -19,12 +19,13 @@ pub async fn sighting(
         lng,
         count,
         description,
+        image,
     } = payload;
 
     sqlx::query!(
         r#"
-        INSERT INTO "things"(id,thing_type,name,lat,lng,count,description,timestamp)
-        VALUES ($1,$2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO "things"(id,thing_type,name,lat,lng,count,description,timestamp,image)
+        VALUES ($1,$2, $3, $4, $5, $6, $7, $8, $9)
         "#,
         thing_id,
         thing as i32,
@@ -33,7 +34,8 @@ pub async fn sighting(
         lng,
         count,
         description,
-        thing_ts
+        thing_ts,
+        image
     )
     .execute(&connection)
     .await

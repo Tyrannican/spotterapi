@@ -44,4 +44,5 @@ pub struct Thing {
     pub lng: f64,
     pub count: i32,
     pub description: Option<String>,
+    pub image: Option<String>,
 }

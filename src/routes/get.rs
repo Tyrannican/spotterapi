@@ -26,6 +26,7 @@ pub async fn sightings(Extension(connection): Extension<PgPool>) -> impl IntoRes
             lng: s.lng,
             count: s.count,
             description: s.description,
+            image: s.image,
         })
         .collect::<Vec<Thing>>();
 
