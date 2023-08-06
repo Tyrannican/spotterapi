@@ -45,4 +45,5 @@ pub struct Thing {
     pub count: i32,
     pub description: Option<String>,
     pub image: Option<String>,
+    pub timestamp: String,
 }

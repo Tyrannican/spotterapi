@@ -19,14 +19,23 @@ pub async fn sightings(Extension(connection): Extension<PgPool>) -> impl IntoRes
 
     let sightings = response
         .into_iter()
-        .map(|s| Thing {
-            name: s.name,
-            thing: ThingType::from_id(s.thing_type),
-            lat: s.lat,
-            lng: s.lng,
-            count: s.count,
-            description: s.description,
-            image: s.image,
+        .map(|s| {
+            let ts = if let Some(timestamp) = s.timestamp {
+                timestamp.and_utc().to_rfc3339()
+            } else {
+                String::from("?")
+            };
+
+            Thing {
+                name: s.name,
+                thing: ThingType::from_id(s.thing_type),
+                lat: s.lat,
+                lng: s.lng,
+                count: s.count,
+                description: s.description,
+                image: s.image,
+                timestamp: ts,
+            }
         })
         .collect::<Vec<Thing>>();
 

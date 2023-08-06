@@ -20,6 +20,7 @@ pub async fn sighting(
         count,
         description,
         image,
+        ..
     } = payload;
 
     sqlx::query!(
